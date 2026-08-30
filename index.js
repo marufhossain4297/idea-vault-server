@@ -57,6 +57,12 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/idea/:userId', async (req, res) => {
+            const id = req.params.userId
+            const result = await ideasCollection.find({ userId: id }).toArray()
+            res.send(result)
+        })
+
         app.post('/comment', async (req, res) => {
             const comment = req.body
             const result = await commentsCollection.insertOne(comment)
@@ -69,10 +75,16 @@ async function run() {
         })
 
         app.get('/comment/:ideaId', async (req, res) => {
-            const id = req.params.ideaId
-            const result = await commentsCollection.find({ ideaId: id }).toArray()
-            res.send(result)
-        })
+            const id = req.params.ideaId;
+            const result = await commentsCollection.find({ ideaId: id }).toArray();
+            res.send(result);
+        });
+
+        app.get('/comments/:userId', async (req, res) => {
+            const id = req.params.userId
+            const result = await commentsCollection.find({ userId: id }).toArray()
+            res.send(result);
+        });
 
         app.delete('/comment/:ideaId', async (req, res) => {
             const id = req.params.ideaId
@@ -82,7 +94,7 @@ async function run() {
             const result = await commentsCollection.deleteOne(query)
             res.send(result)
         })
-        
+
         app.patch('/comment/:id', async (req, res) => {
             const id = req.params.id;
             const updatedData = req.body;
