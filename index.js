@@ -57,9 +57,29 @@ async function run() {
             res.send(result)
         })
 
+        app.patch('/ideas/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedData = req.body;
+
+            const result = await ideasCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updatedData }
+            );
+            res.send(result);
+        });
+
         app.get('/idea/:userId', async (req, res) => {
             const id = req.params.userId
             const result = await ideasCollection.find({ userId: id }).toArray()
+            res.send(result)
+        })
+
+        app.delete('/idea/:userId', async (req, res) => {
+            const id = req.params.userId
+            const query = {
+                _id: new ObjectId(id)
+            };
+            const result = await ideasCollection.deleteOne(query)
             res.send(result)
         })
 
@@ -94,6 +114,7 @@ async function run() {
             const result = await commentsCollection.deleteOne(query)
             res.send(result)
         })
+
 
         app.patch('/comment/:id', async (req, res) => {
             const id = req.params.id;
