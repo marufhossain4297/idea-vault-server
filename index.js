@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors')
 const port = 8000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 const uri = "mongodb+srv://ideavault:WSJtlEMlrufpxAN1@cluster0.bjgy0lu.mongodb.net/?appName=Cluster0";
 
 app.use(express.json())
@@ -24,6 +25,33 @@ app.listen(port, () => {
     console.log(`Runing in port ${port}`)
 })
 
+const JWKS = createRemoteJWKSet(
+    new URL('http://localhost:3000/api/auth/jwks')
+)
+
+const verifyToken = async (req, res, next) => {
+    const authHeader = req?.headers.authorization;
+    const token = authHeader
+
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+
+    try {
+        const { payload } = await jwtVerify(token, JWKS)
+        console.log(payload);
+        next()
+    }
+    catch (error) {
+        return res.status(401).send({ message: 'Forbidden access ' })
+    }
+
+
+}
 
 async function run() {
     try {
@@ -34,121 +62,23 @@ async function run() {
         const commentsCollection = db.collection('comments')
 
 
-        // app.get('/ideas', async (req, res) => {
-
-        //     const AITools = req.query.AITools
-        //     const realEstateTech = req.query.realEstateTech
-        //     const developerTools = req.query.developerTools
-        //     const productivity = req.query.productivity
-        //     const hardwareHealth = req.query.hardwareHealth
-        //     const fintechSaaS = req.query.fintechSaaS
-        //     const noCode = req.query.noCode
-        //     const cleanTech = req.query.cleanTech
-        //     const designTools = req.query.designTools
-        //     const hrTech = req.query.hrTech
-        //     const connectivity = req.query.connectivity
-        //     const healthTech = req.query.healthTech
-        //     const cybersecurity = req.query.cybersecurity
-        //     const eCommerce = req.query.eCommerce
-        //     const eventTech = req.query.eventTech
-        //     const aiMedia = req.query.aiMedia
-
-        //     if (AITools) {
-        //         const result = await ideasCollection.find({ category: "AI Tools" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (realEstateTech) {
-        //         const result = await ideasCollection.find({ category: "Real Estate Tech" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (developerTools) {
-        //         const result = await ideasCollection.find({ category: "Developer Tools" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (productivity) {
-        //         const result = await ideasCollection.find({ category: "Productivity" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (hardwareHealth) {
-        //         const result = await ideasCollection.find({ category: "Hardware & Health" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (fintechSaaS) {
-        //         const result = await ideasCollection.find({ category: "Fintech & SaaS" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (noCode) {
-        //         const result = await ideasCollection.find({ category: "No-Code" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (cleanTech) {
-        //         const result = await ideasCollection.find({ category: "CleanTech" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (designTools) {
-        //         const result = await ideasCollection.find({ category: "Design Tools" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (hrTech) {
-        //         const result = await ideasCollection.find({ category: "HR Tech" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (connectivity) {
-        //         const result = await ideasCollection.find({ category: "Connectivity" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (healthTech) {
-        //         const result = await ideasCollection.find({ category: "HealthTech" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (cybersecurity) {
-        //         const result = await ideasCollection.find({ category: "Cybersecurity" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (eCommerce) {
-        //         const result = await ideasCollection.find({ category: "E-commerce" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (eventTech) {
-        //         const result = await ideasCollection.find({ category: "EventTech" }).toArray()
-        //         res.send(result)
-        //     }
-        //     else if (aiMedia) {
-        //         const result = await ideasCollection.find({ category: "AI Media" }).toArray()
-        //         res.send(result)
-        //     }
-
-        // })
-
-        // Express Backend
-        
-        
-        app.get('/ideas', async (req, res) => {
-            const category  = req.query.category
-
-            const query = category ? { category: category } : {};
-            const result = await ideasCollection.find(query).toArray();
-
-            res.send(result);
-        });
-        
         app.post('/ideas', async (req, res) => {
             const ideaInfo = req.body
             const result = await ideasCollection.insertOne(ideaInfo)
             res.send(result)
         })
 
-        app.get('/ideas/featured', async (req, res) => {
-            const result = await ideasCollection.find().limit(3).toArray()
-            res.send(result)
-        })
-
-        app.get('/ideas', async (req, res) => {
+        app.get('/ideas', verifyToken, async (req, res) => {
             const result = await ideasCollection.find().toArray()
             res.send(result)
         })
 
-        app.get('/ideas/:id', async (req, res) => {
+        app.get('/ideas/featured', verifyToken, async (req, res) => {
+            const result = await ideasCollection.find().limit(3).toArray()
+            res.send(result)
+        })
+
+        app.get('/ideas/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const query = {
                 _id: new ObjectId(id)
@@ -168,6 +98,7 @@ async function run() {
             res.send(result);
         });
 
+        //need to add verifyToken middleware for this
         app.get('/idea/:userId', async (req, res) => {
             const id = req.params.userId
             const result = await ideasCollection.find({ userId: id }).toArray()
@@ -189,17 +120,18 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/comment', async (req, res) => {
+        app.get('/comment', verifyToken, async (req, res) => {
             const result = await commentsCollection.find().toArray()
             res.send(result)
         })
 
-        app.get('/comment/:ideaId', async (req, res) => {
+        app.get('/comment/:ideaId', verifyToken, async (req, res) => {
             const id = req.params.ideaId;
             const result = await commentsCollection.find({ ideaId: id }).toArray();
             res.send(result);
         });
 
+        
         app.get('/comments/:userId', async (req, res) => {
             const id = req.params.userId
             const result = await commentsCollection.find({ userId: id }).toArray()
