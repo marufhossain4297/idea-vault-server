@@ -1,10 +1,12 @@
 const express = require('express')
+const dotenv = require('dotenv')
 const app = express()
 const cors = require('cors')
-const port = 8000
+dotenv.config()
+const port = process.env.PORT
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
-const uri = "mongodb+srv://ideavault:WSJtlEMlrufpxAN1@cluster0.bjgy0lu.mongodb.net/?appName=Cluster0";
+const uri = process.env.MONGODB_URI
 
 app.use(express.json())
 app.use(cors())
@@ -26,7 +28,7 @@ app.listen(port, () => {
 })
 
 const JWKS = createRemoteJWKSet(
-    new URL('http://localhost:3000/api/auth/jwks')
+    new URL(`${process.env.URL}/api/auth/jwks`)
 )
 
 const verifyToken = async (req, res, next) => {
@@ -55,7 +57,7 @@ const verifyToken = async (req, res, next) => {
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
 
         const db = client.db('ideavault')
         const ideasCollection = db.collection('ideas')
@@ -98,7 +100,7 @@ async function run() {
             res.send(result);
         });
 
-        //need to add verifyToken middleware for this
+        
         app.get('/idea/:userId', async (req, res) => {
             const id = req.params.userId
             const result = await ideasCollection.find({ userId: id }).toArray()
@@ -159,8 +161,8 @@ async function run() {
             res.send(result);
         });
 
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     }
 
     finally {
