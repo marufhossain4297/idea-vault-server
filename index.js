@@ -9,8 +9,7 @@ const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 const uri = process.env.MONGODB_URI
 
 app.use(express.json())
-app.use(cors())
-
+app.use(cors());
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -49,7 +48,7 @@ const verifyToken = async (req, res, next) => {
         next()
     }
     catch (error) {
-        return res.status(401).send({ message: 'Forbidden access ' })
+        return res.status(401).send({ message: 'Forbidden access' })
     }
 
 
@@ -70,17 +69,17 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/ideas', verifyToken, async (req, res) => {
+        app.get('/ideas', async (req, res) => {
             const result = await ideasCollection.find().toArray()
             res.send(result)
         })
 
-        app.get('/ideas/featured', verifyToken, async (req, res) => {
+        app.get('/ideas/featured', async (req, res) => {
             const result = await ideasCollection.find().limit(3).toArray()
             res.send(result)
         })
 
-        app.get('/ideas/:id', verifyToken, async (req, res) => {
+        app.get('/ideas/:id', async (req, res) => {
             const id = req.params.id
             const query = {
                 _id: new ObjectId(id)
@@ -100,7 +99,7 @@ async function run() {
             res.send(result);
         });
 
-        
+
         app.get('/idea/:userId', async (req, res) => {
             const id = req.params.userId
             const result = await ideasCollection.find({ userId: id }).toArray()
@@ -122,18 +121,18 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/comment', verifyToken, async (req, res) => {
+        app.get('/comment', async (req, res) => {
             const result = await commentsCollection.find().toArray()
             res.send(result)
         })
 
-        app.get('/comment/:ideaId', verifyToken, async (req, res) => {
+        app.get('/comment/:ideaId', async (req, res) => {
             const id = req.params.ideaId;
             const result = await commentsCollection.find({ ideaId: id }).toArray();
             res.send(result);
         });
 
-        
+
         app.get('/comments/:userId', async (req, res) => {
             const id = req.params.userId
             const result = await commentsCollection.find({ userId: id }).toArray()
